@@ -18,7 +18,7 @@ for name in fields:
 
 records = shpf.records()
 
-scr_width, scr_height = 640, 480
+scr_width, scr_height = 540, 480
 def conv_coord(x,y, rot=10):
     minx, miny, maxx, maxy = 1000000, 4500000, 2600000, 6300000
     ctrx = (maxx+minx)/2
@@ -30,7 +30,7 @@ def conv_coord(x,y, rot=10):
     newy = scr_height - int(float(ctry+ry-miny)/(maxy-miny)*scr_height)
     return (newx, newy)
 
-im = Image.new('RGB', (640, 480), color="white")
+im = Image.new('RGB', (scr_width, scr_height), color="white")
 draw = ImageDraw.Draw(im)
 font = ImageFont.truetype("arial.ttf", 24)
 smallfont = ImageFont.truetype("arial.ttf", 10)
@@ -45,6 +45,7 @@ for fidx, feature in enumerate(geom):
     try:
         if regidx[fidx] == 0: continue
         v = df.iloc[19, regidx[fidx]]
+        print v
     except IndexError:
         continue
     if minv == None or v < minv: minv = v
@@ -81,7 +82,7 @@ for fidx, feature in enumerate(geom):
             greyness = maxgrey - (int((maxv-v)*(maxgrey-mingrey)/(maxv-minv)))
         except TypeError:
             import pdb; pdb.set_trace()
-        print greyness
+        #print greyness
         draw.polygon(poly_list, outline="blue", fill=(255-greyness,)*3)
         xm = (xs1+xs2)/2
         ym = (ys1+ys2)/2
@@ -90,7 +91,7 @@ for fidx, feature in enumerate(geom):
 
 #print poly_list
 print (minv, maxv)
-legend_box = (500,300,530,390)
+legend_box = (440,300,470,390)
 lmargin = 20
 height = legend_box[3]-legend_box[1] 
 maxgrey1 = maxgrey + lmargin 
