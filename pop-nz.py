@@ -16,24 +16,38 @@ for name in fields:
 
 records = shpf.records()
 
-def conv_coord(x,y, rot=15):
+scr_width, scr_height = 640, 480
+def conv_coord(x,y, rot=10):
     minx, miny, maxx, maxy = 1000000, 4500000, 2600000, 6300000
     ctrx = (maxx+minx)/2
     ctry = (maxy+miny)/2
     rad = rot*math.pi/180
     rx = math.cos(rad)*(x-ctrx)-math.sin(rad)*(y-ctry)
     ry = math.sin(rad)*(x-ctrx)+math.cos(rad)*(y-ctry)
-    scr_width, scr_height = 640, 480
     newx = int(float(ctrx+rx-minx)/(maxx-minx)*scr_width)
     newy = scr_height - int(float(ctry+ry-miny)/(maxy-miny)*scr_height)
     return (newx, newy)
 
 im = Image.new('RGB', (640, 480), color="white")
 draw = ImageDraw.Draw(im)
-font = ImageFont.truetype("arial.ttf", 15)
-
-
+font = ImageFont.truetype("arial.ttf", 24)
+title = "Population Distribution of NZ (2015)"
+w,h = font.getsize(title)
+x=(scr_width-w)/2
+y =5 
+draw.text((x, y), title, font=font, fill="black")
+maxv = minv = None
 geom = shpf.shapes()
+for fidx, feature in enumerate(geom):
+    try:
+        if regidx[fidx] == 0: continue
+        v = df.iloc[19, regidx[fidx]]
+    except IndexError:
+        continue
+    print v
+    if minv == None or v < minv: minv = v
+    if maxv == None or v > maxv: maxv = v
+
 for fidx, feature in enumerate(geom):
     x1,y1,x2,y2 = feature.bbox
     xs1,ys1 = conv_coord(x1,y1)
@@ -60,9 +74,13 @@ for fidx, feature in enumerate(geom):
                # append the coords to the polygon list
                poly_list.append(poly_coord)
            lastx, lasty = x,y    
-        #print df.iloc[19, regidx[fidx]]
-        greyness = 255-int(df.iloc[19, regidx[fidx]].astype(float)*200/nztot)
-        print greyness
+        mingrey=20
+        maxgrey=170
+        try:
+            greyness = 255-(int(df.iloc[19, regidx[fidx]].astype(float)*(maxgrey-mingrey)/maxv)+mingrey)
+        except TypeError:
+            import pdb; pdb.set_trace()
+        #print greyness
         draw.polygon(poly_list, outline="blue", fill=(greyness,greyness,greyness))
         xm = (xs1+xs2)/2
         ym = (ys1+ys2)/2
@@ -70,7 +88,16 @@ for fidx, feature in enumerate(geom):
 
 
 #print poly_list
-
-
+print (minv, maxv)
+legend_box = (500,300,530,390)
+for iy in range(legend_box[1], legend_box[3]):
+    height = legend_box[3]-legend_box[1] 
+    maxgrey1 = maxgrey + 40
+    mingrey1 = mingrey - 40
+    greyness = 255-int(maxgrey1 - float(maxgrey1-mingrey1)/(height)*(iy - legend_box[1]))
+    #print greyness
+    draw.line((legend_box[0], iy) + (legend_box[2], iy), fill=(greyness, greyness, greyness))
+    
+draw.rectangle(legend_box, outline="blue")
 del draw
 im.save("nz1.png", "PNG")
