@@ -7,6 +7,8 @@ df = pd.read_csv("DPE389701_population-by-region.csv", skiprows=1)
 df.rename(columns={'Unnamed: 0':'Date'}, inplace=True)
 regidx = [1,2,3,4,5,6,7,8,9, 13,14,15,16,11,0,12] 
 nztot = 1569900.0 #df.iloc[19,19].astype(float)
+mingrey=20
+maxgrey=170
 
 shp_folder = "C:/Users/Glenn/Documents/Stats/ShapeFiles/"
 shpf = shapefile.Reader(shp_folder + "REGC2016_GV_Full.shp")
@@ -31,6 +33,7 @@ def conv_coord(x,y, rot=10):
 im = Image.new('RGB', (640, 480), color="white")
 draw = ImageDraw.Draw(im)
 font = ImageFont.truetype("arial.ttf", 24)
+smallfont = ImageFont.truetype("arial.ttf", 10)
 title = "Population Distribution of NZ (2015)"
 w,h = font.getsize(title)
 x=(scr_width-w)/2
@@ -44,7 +47,6 @@ for fidx, feature in enumerate(geom):
         v = df.iloc[19, regidx[fidx]]
     except IndexError:
         continue
-    print v
     if minv == None or v < minv: minv = v
     if maxv == None or v > maxv: maxv = v
 
@@ -74,14 +76,13 @@ for fidx, feature in enumerate(geom):
                # append the coords to the polygon list
                poly_list.append(poly_coord)
            lastx, lasty = x,y    
-        mingrey=20
-        maxgrey=170
         try:
-            greyness = 255-(int(df.iloc[19, regidx[fidx]].astype(float)*(maxgrey-mingrey)/maxv)+mingrey)
+            v = df.iloc[19, regidx[fidx]].astype(float) 
+            greyness = maxgrey - (int((maxv-v)*(maxgrey-mingrey)/(maxv-minv)))
         except TypeError:
             import pdb; pdb.set_trace()
-        #print greyness
-        draw.polygon(poly_list, outline="blue", fill=(greyness,greyness,greyness))
+        print greyness
+        draw.polygon(poly_list, outline="blue", fill=(255-greyness,)*3)
         xm = (xs1+xs2)/2
         ym = (ys1+ys2)/2
         #draw.text((xm, ym), str(fidx+1), font=font, fill="black")
@@ -90,14 +91,36 @@ for fidx, feature in enumerate(geom):
 #print poly_list
 print (minv, maxv)
 legend_box = (500,300,530,390)
+lmargin = 20
+height = legend_box[3]-legend_box[1] 
+maxgrey1 = maxgrey + lmargin 
+mingrey1 = mingrey - lmargin 
 for iy in range(legend_box[1], legend_box[3]):
-    height = legend_box[3]-legend_box[1] 
-    maxgrey1 = maxgrey + 40
-    mingrey1 = mingrey - 40
-    greyness = 255-int(maxgrey1 - float(maxgrey1-mingrey1)/(height)*(iy - legend_box[1]))
+    greyness = int(maxgrey1 - float(maxgrey1-mingrey1)/(height)*(iy - legend_box[1]))
     #print greyness
-    draw.line((legend_box[0], iy) + (legend_box[2], iy), fill=(greyness, greyness, greyness))
+    draw.line((legend_box[0], iy) + (legend_box[2], iy), fill=(255-greyness,)*3)
     
 draw.rectangle(legend_box, outline="blue")
+
+nticks = 4
+ticklen = 10
+divisor = 6
+vmargin = float(lmargin)/(maxgrey-mingrey)*height
+s = "(million)"
+w,h = smallfont.getsize(s)
+draw.text(((legend_box[2]+legend_box[0]-w)/2, legend_box[1]-h-3),s,
+    font=smallfont, fill="blue")
+
+for ii in range(0, nticks):
+    v = maxv - float(maxv-minv)*ii/(nticks-1)
+    s = "%.2f" % (v/10**divisor)
+    w,h = smallfont.getsize(s)
+    print "*"+s+"*"
+    vpos = float(ii)*(height-2*vmargin)/(nticks-1)+vmargin+legend_box[1]
+    draw.text((legend_box[0]-ticklen-w-3, vpos-h/2), s, font=smallfont, fill="blue")
+    print vpos
+    draw.line((legend_box[0]-ticklen, vpos) + (legend_box[0], vpos), fill="blue")
+
+
 del draw
 im.save("nz1.png", "PNG")
