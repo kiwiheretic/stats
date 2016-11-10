@@ -1,0 +1,10 @@
+#  %run 'stats/scripts/migration.ipy'
+import matplotlib.pyplot as plt
+%matplotlib
+plt.style.use('ggplot')
+import pandas as pd
+
+df = pd.read_csv("stats/migration.csv", skiprows=27, usecols=[1,2,3,4,5,6,7], nrows=11, header=None, names=['Date', 'nz-arrivals', 'nz-departures', 'Kiwi-Migrations','other-arrivals', 'other-departures', 'Foreign-Migrations'], thousands=",")
+print (df)
+df = df.apply(pd.to_numeric)
+df.set_index(df['Date'], inplace=True)

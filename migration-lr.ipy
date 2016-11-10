@@ -1,0 +1,20 @@
+#  %run 'stats/scripts/migration-lr.ipy'
+import matplotlib.pyplot as plt
+%matplotlib
+plt.style.use('ggplot')
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv("stats/migration-cty-last-residence.csv", skiprows=8, nrows=43, usecols=[0,1,2,3,4,5,6,7], header=None, names=['Region', 'Country','aug-2014', 'aug-2015', 'aug-2016','ytd-2014', 'ytd-2015', 'ytd-2016'], thousands=",")
+df1 = df[df['Region'].notnull()]
+del df1['Country']
+df1 = df1.set_index('Region' ).apply(pd.to_numeric)
+print (df1)
+
+f = plt.figure()
+plt.title("Breakdown of net immigration by departure country", color='black')
+df1.plot(kind='pie', y='ytd-2016', ax=f.gca())
+plt.legend(loc='upper right')
+plt.show()
+#df = df.where(pd.notnull(df), None).apply(pd.to_numeric)
+#df.set_index(df['Date'], inplace=True)

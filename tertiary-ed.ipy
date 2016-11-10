@@ -1,0 +1,13 @@
+#  %run 'stats/scripts/tertiary-ed.ipy'
+import matplotlib.pyplot as plt
+%matplotlib
+plt.style.use('ggplot')
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv("stats/Provider-based-Enrolments-2008-2015-final.csv", thousands=",").iloc[32:54,1:5] 
+df.replace(r"(\d+),(\d+)",value=r"\1\2", regex=True, inplace=True)
+df.columns = ['Date', 'Domestic', 'International', 'Total']
+df = df.apply(pd.to_numeric)
+df.set_index("Date", inplace=True)
+print (df.head())

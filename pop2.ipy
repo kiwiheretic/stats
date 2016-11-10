@@ -1,0 +1,53 @@
+#  %run 'stats/scripts/population1.ipy'
+import matplotlib.pyplot as plt
+%matplotlib
+plt.style.use('ggplot')
+import pandas as pd
+
+df = pd.read_csv("stats/DPE403903_population-by-age.csv", skiprows=3)
+lbls = df.columns.tolist()
+lbls[0]="Date"
+df.columns = lbls
+
+df = df.head(26)
+df.set_index('Date', inplace=True)
+# csv files are imported as strings so we can't add them
+# The ".." values in file are problematic so we replace them with
+# missing data identifiers.  Can't use convert_objects because its deprecated.
+df1 = df.replace({'..':None}).apply(pd.to_numeric).head(26)
+df2 = pd.DataFrame(index=df1.index)
+df2['0-17'] = df1.iloc[:,0:18].sum(axis=1)
+df2['18-49'] = df1.iloc[:,18:50].sum(axis=1) 
+df2['50-59'] = df1.iloc[:,50:60].sum(axis=1) 
+df2['60-64'] = df1.iloc[:,60:65].sum(axis=1) 
+df2['65-89'] = df1.iloc[:,65:90].sum(axis=1) 
+df2 = df2.drop('1991')
+
+df3 = df1.drop('1991').iloc[:,0:90]
+df4 = df3.sub(df3.ix[0])
+
+df5 = pd.DataFrame(index=df4.index)
+df5['0-17'] = df4.iloc[:,0:18].mean(axis=1)
+df5['18-59'] = df4.iloc[:,18:60].mean(axis=1) 
+#df5['50-59'] = df4.iloc[:,50:60].mean(axis=1) 
+df5['60-64'] = df4.iloc[:,60:65].mean(axis=1) 
+df5['65-89'] = df4.iloc[:,65:90].mean(axis=1) 
+
+df6 = pd.DataFrame(index=df4.index)
+for i in range(0,90,15):
+    cat = "{}-{}".format(i, i+14)
+    df6[cat] = df1.iloc[:,i:i+10].sum(axis=1)
+
+df7 = df6.sub(df6.ix[0])
+
+#df2.plot(kind='bar', stacked=True, title="NZ Population Growth")
+
+f = plt.figure()
+ax = f.gca()
+ax.set_ylabel('Total Population Head Count')
+plt.title("NZ Population Growth", color='black')
+df6.plot(kind='bar', stacked=True, ax=ax)
+plt.legend(loc='lower left')
+plt.show()
+
+df7.plot(kind='line', lw=3, title="Population change since 1992")

@@ -1,0 +1,10 @@
+#  %run 'stats/scripts/population1.ipy'
+import matplotlib.pyplot as plt
+plt.style.use('ggplot')
+import pandas as pd
+
+df = pd.read_csv("stats/DPE389701_population-by-region.csv", skiprows=1)
+df.rename(columns={'Unnamed: 0':'Date'}, inplace=True)
+
+%matplotlib
+df.head(20).plot(x='Date',y='New Zealand', kind='bar')

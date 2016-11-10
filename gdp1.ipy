@@ -1,0 +1,30 @@
+#  %run 'stats/scripts/gdp.ipy'
+import matplotlib.pyplot as plt
+%matplotlib
+plt.style.use('ggplot')
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv("stats/GDP-CV-Act-Ansic06-ind-groups.csv", skiprows=3, usecols=[0,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34], nrows=39) 
+df.set_index("Date", inplace=True)
+df.apply(pd.to_numeric)
+df['Manufacturing'] = df['Machinery Manufacture'] + df['Furniture Manufacture']
+dfpop = pd.read_csv("stats/DPE389701_population-by-region.csv", skiprows=1, nrows=21)
+dfpop.rename(columns={'Unnamed: 0':'Date', 'New Zealand':'Population'}, inplace=True)
+dfpop = dfpop.set_index('Date').iloc[0:20, 18]
+dfpop.apply(pd.to_numeric)
+# Convert index to integer type (was 'object')
+dfpop.index = dfpop.index.astype(int)
+
+# Do a join and convert series dfpop to frame
+df2 = pd.merge(df, dfpop.to_frame(), left_index=True, right_index=True)
+df2['GDP per capita'] = df2['Total All Industries']/df2['Population']
+df2['GDP Food per capita'] = (df2['Food']+df2['Food Services'])/df2['Population']
+df2['GDP Agriculture per capita'] = df2['Agriculture']/df2['Population']
+df2['GDP Education per capita'] = df2['Education']/df2['Population']
+df2['GDP Retail Trade per capita'] = df2['Retail Trade']/df2['Population']
+df2['GDP Transport per capita'] = df2['Transport']/df2['Population']
+df2['GDP Health per capita'] = df2['Health']/df2['Population']
+df2['GDP Recreation per capita'] = df2['Recreation']/df2['Population']
+df2['GDP Rental per capita'] = df2['Rental']/df2['Population']
+print (df2.tail(10))
