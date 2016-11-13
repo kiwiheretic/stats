@@ -10,10 +10,10 @@ df.rename(columns={'Unnamed: 0':'Date'}, inplace=True)
 regidx = [1,2,3,4,5,6,7,8,9, 13,14,15,16,11,0,12,0] 
 nztot = 1569900.0 #df.iloc[19,19].astype(float)
 
-shp_folder = "C:/Users/Glenn/Documents/Stats/ShapeFiles/"
-shpf = shapefile.Reader(shp_folder + "REGC2016_GV_Full.shp")
-#shp_folder = "C:/Users/Glenn/Documents/Stats/2016 Digital Boundaries Generalised Clipped/"
-#shpf = shapefile.Reader(shp_folder + "REGC2016_GV_Clipped.shp")
+#shp_folder = "C:/Users/Glenn/Documents/Stats/ShapeFiles/"
+#shpf = shapefile.Reader(shp_folder + "REGC2016_GV_Full.shp")
+shp_folder = "C:/Users/Glenn/Documents/Stats/2016 Digital Boundaries Generalised Clipped/"
+shpf = shapefile.Reader(shp_folder + "REGC2016_GV_Clipped.shp")
 fields = shpf.fields
 for name in fields:
     print name
@@ -30,7 +30,13 @@ for fidx, feature in enumerate(geom):
         shades.append(v)
     except IndexError:
         continue
-    polygons.append(feature.points)
+    parts = []
+    for idx in range(len(feature.parts)-1):
+        pidx1 = feature.parts[idx]
+        pidx2 = feature.parts[idx+1]
+        parts.append(feature.points[pidx1:pidx2-1])
+    parts.append(feature.points[feature.parts[-1]:])
+    polygons.append(parts)
     bboxes.append(feature.bbox)
 
 map1 = MapDrawer()

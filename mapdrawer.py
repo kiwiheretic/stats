@@ -1,5 +1,6 @@
 from PIL import Image, ImageDraw, ImageFont
 import math
+import types
 
 class MapDrawer(object):
     img_width, img_height = 640, 480
@@ -35,12 +36,13 @@ class MapDrawer(object):
         
         minx = miny = maxx = maxy = None
         for poly in polygons:
-            for pt in poly:
-                x,y = pt
-                if not minx or x < minx: minx = x
-                if not miny or y < miny: miny = y
-                if not maxx or x > maxx: maxx = x
-                if not maxy or y > maxy: maxy = y
+            for part in poly:
+                for pt in part:
+                    x,y = pt
+                    if not minx or x < minx: minx = x
+                    if not miny or y < miny: miny = y
+                    if not maxx or x > maxx: maxx = x
+                    if not maxy or y > maxy: maxy = y
         self.minx = int(minx - 0.15*(maxx-minx))
         self.miny = int(miny - 0.15*(maxy-miny))
         self.maxx = int(maxx + 0.15*(maxx-minx))
@@ -52,18 +54,18 @@ class MapDrawer(object):
             #xs1,ys1 = self.conv_coord(x1,y1)
             #xs2,ys2 = self.conv_coord(x2,y2)
 
-            poly_tuples = []
-            for p in poly:
-                x,y = self.conv_coord(p[0], p[1])
-                poly_tuples.append((x,y))
-
             # create empty list to store all the coordinates
             v = shades[idx]
             greyness = self.maxgrey - (int((maxv-v)*(self.maxgrey-self.mingrey)/(maxv-minv)))
-            if len(poly_tuples)>=2:
-                draw.polygon(poly_tuples, outline="blue", fill=(255-greyness,)*3)
-            del poly_tuples
-                #draw.line(poly_list, fill="blue")
+            for part in poly:
+                poly_tuples = []
+                for p in part:
+                    x,y = self.conv_coord(p[0], p[1])
+                    poly_tuples.append((x,y))
+
+                if len(poly_tuples)>=2:
+                    draw.polygon(poly_tuples, outline="blue", fill=(255-greyness,)*3)
+                del poly_tuples
             #xm = (xs1+xs2)/2
             #ym = (ys1+ys2)/2
             #draw.text((xm, ym), str(fidx+1), font=font, fill="black")
