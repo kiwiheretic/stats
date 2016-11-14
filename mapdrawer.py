@@ -18,7 +18,7 @@ class MapDrawer(object):
         newy = self.img_height - int(float(ctry+ry-self.miny)/(self.maxy-self.miny)*self.img_height)
         return (newx, newy)
 
-    def draw(self, polygons, shades, bboxes=None, title=None, legend_header=None):
+    def draw(self, polygons, shades, bboxes=None, title=None, draw_legend = True, legend_header=None):
         im = Image.new('RGB', (self.img_width, self.img_height), color="white")
         draw = ImageDraw.Draw(im)
         smallfont = ImageFont.truetype("arial.ttf", 10)
@@ -55,8 +55,11 @@ class MapDrawer(object):
             #xs2,ys2 = self.conv_coord(x2,y2)
 
             # create empty list to store all the coordinates
-            v = shades[idx]
-            greyness = self.maxgrey - (int((maxv-v)*(self.maxgrey-self.mingrey)/(maxv-minv)))
+            if shades:
+                v = shades[idx]
+                greyness = self.maxgrey - (int((maxv-v)*(self.maxgrey-self.mingrey)/(maxv-minv)))
+            else:
+                greyness = minv = maxv = v = 0
             for part in poly:
                 poly_tuples = []
                 for p in part:
@@ -71,34 +74,35 @@ class MapDrawer(object):
             #draw.text((xm, ym), str(fidx+1), font=font, fill="black")
 
 
-        print (minv, maxv)
-        legend_box = (440,300,470,390)
-        lmargin = 20
-        height = legend_box[3]-legend_box[1] 
-        maxgrey1 = self.maxgrey + lmargin 
-        mingrey1 = self.mingrey - lmargin 
-        for iy in range(legend_box[1], legend_box[3]):
-            greyness = int(maxgrey1 - float(maxgrey1-mingrey1)/(height)*(iy - legend_box[1]))
-            draw.line((legend_box[0], iy) + (legend_box[2], iy), fill=(255-greyness,)*3)
-            
-        draw.rectangle(legend_box, outline="blue")
+        if draw_legend:
+            print (minv, maxv)
+            legend_box = (440,300,470,390)
+            lmargin = 20
+            height = legend_box[3]-legend_box[1] 
+            maxgrey1 = self.maxgrey + lmargin 
+            mingrey1 = self.mingrey - lmargin 
+            for iy in range(legend_box[1], legend_box[3]):
+                greyness = int(maxgrey1 - float(maxgrey1-mingrey1)/(height)*(iy - legend_box[1]))
+                draw.line((legend_box[0], iy) + (legend_box[2], iy), fill=(255-greyness,)*3)
+                
+            draw.rectangle(legend_box, outline="blue")
 
-        nticks = 4
-        ticklen = 10
-        divisor = 6
-        vmargin = float(lmargin)/(self.maxgrey-self.mingrey)*height
-        if legend_header:
-            w,h = smallfont.getsize(legend_header)
-            draw.text(((legend_box[2]+legend_box[0]-w)/2, legend_box[1]-h-3),legend_header,
-                font=smallfont, fill="blue")
+            nticks = 4
+            ticklen = 10
+            divisor = 6
+            vmargin = float(lmargin)/(self.maxgrey-self.mingrey)*height
+            if legend_header:
+                w,h = smallfont.getsize(legend_header)
+                draw.text(((legend_box[2]+legend_box[0]-w)/2, legend_box[1]-h-3),legend_header,
+                    font=smallfont, fill="blue")
 
-        for ii in range(0, nticks):
-            v = maxv - float(maxv-minv)*ii/(nticks-1)
-            s = "%.2f" % (v/10**divisor)
-            w,h = smallfont.getsize(s)
-            vpos = float(ii)*(height-2*vmargin)/(nticks-1)+vmargin+legend_box[1]
-            draw.text((legend_box[0]-ticklen-w-3, vpos-h/2), s, font=smallfont, fill="blue")
-            draw.line((legend_box[0]-ticklen, vpos) + (legend_box[0], vpos), fill="blue")
+            for ii in range(0, nticks):
+                v = maxv - float(maxv-minv)*ii/(nticks-1)
+                s = "%.2f" % (v/10**divisor)
+                w,h = smallfont.getsize(s)
+                vpos = float(ii)*(height-2*vmargin)/(nticks-1)+vmargin+legend_box[1]
+                draw.text((legend_box[0]-ticklen-w-3, vpos-h/2), s, font=smallfont, fill="blue")
+                draw.line((legend_box[0]-ticklen, vpos) + (legend_box[0], vpos), fill="blue")
 
 
         del draw
