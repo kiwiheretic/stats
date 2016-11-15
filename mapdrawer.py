@@ -1,12 +1,56 @@
 from PIL import Image, ImageDraw, ImageFont
 import math
 import types
+import shapefile
+class ShapeFileIterator(object):
+    def __init__(self, filename):
+        self.shpfile = filename
+        self.shpf = shapefile.Reader(self.shpfile)
+        self.geom = self.shpf.shapes()
+        self.reset()
+
+    def __iter__(self):
+        return self
+
+    def reset(self):
+        self.gidx = 0
+
+    def next(self):
+        if self.gidx >= len(self.geom):
+            raise StopIteration
+
+        feature = self.geom[self.gidx]
+        parts = []
+        pidx2 = 0
+        for idx in range(len(feature.parts)-1):
+            pidx1 = feature.parts[idx]
+            pidx2 = feature.parts[idx+1]
+            parts.append(feature.points[pidx1:pidx2-1])
+        self.gidx += 1
+        parts.append(feature.points[pidx2:])
+        return parts
 
 class MapDrawer(object):
     img_width, img_height = 640, 480
     mingrey=20
     maxgrey=170
 
+    def __init__(self):
+        self.im = Image.new('RGB', (self.img_width, self.img_height), color="white")
+        self._draw = ImageDraw.Draw(self.im)
+        self.smallfont = ImageFont.truetype("arial.ttf", 10)
+        self.font = ImageFont.truetype("arial.ttf", 24)
+        self.regions = []
+
+    def number_regions(self):
+        if not self.regions:
+            print "No regions to number"
+            return
+
+        cnt = 1
+        for x,y in self.regions:
+            self._draw.text((x, y), str(cnt), font=self.smallfont, fill="black")
+            cnt += 1
 
     def conv_coord(self, x,y, rot=10):
         ctrx = (self.maxx+self.minx)/2
@@ -18,16 +62,13 @@ class MapDrawer(object):
         newy = self.img_height - int(float(ctry+ry-self.miny)/(self.maxy-self.miny)*self.img_height)
         return (newx, newy)
 
-    def draw(self, polygons, shades, bboxes=None, title=None, draw_legend = True, legend_header=None):
-        im = Image.new('RGB', (self.img_width, self.img_height), color="white")
-        draw = ImageDraw.Draw(im)
-        smallfont = ImageFont.truetype("arial.ttf", 10)
-        font = ImageFont.truetype("arial.ttf", 24)
+
+    def draw(self, polygons, shades=None, bboxes=None, title=None, draw_legend = True, legend_header=None):
         if title:
-            w,h = font.getsize(title)
+            w,h = self.font.getsize(title)
             x=(self.img_width-w)/2
             y =5 
-            draw.text((x, y), title, font=font, fill="black")
+            self._draw.text((x, y), title, font=self.font, fill="black")
 
         minv = maxv = None
         for v in shades:
@@ -48,30 +89,40 @@ class MapDrawer(object):
         self.maxx = int(maxx + 0.15*(maxx-minx))
         self.maxy = int(maxy + 0.15*(maxy-miny))
         print (self.minx, self.miny, self.maxx, self.maxy)
+        self.regions = []
+
+        if isinstance(polygons, ShapeFileIterator):
+            polygons.reset()
 
         for idx, poly in enumerate(polygons):
-            #x1,y1,x2,y2 = feature.bbox
-            #xs1,ys1 = self.conv_coord(x1,y1)
-            #xs2,ys2 = self.conv_coord(x2,y2)
 
+            if not poly: continue
             # create empty list to store all the coordinates
             if shades:
                 v = shades[idx]
                 greyness = self.maxgrey - (int((maxv-v)*(self.maxgrey-self.mingrey)/(maxv-minv)))
             else:
                 greyness = minv = maxv = v = 0
+
+            cnt = sx = sy = 0
+
             for part in poly:
                 poly_tuples = []
                 for p in part:
                     x,y = self.conv_coord(p[0], p[1])
                     poly_tuples.append((x,y))
+                    sx += x
+                    sy += y
+                    cnt += 1
 
                 if len(poly_tuples)>=2:
-                    draw.polygon(poly_tuples, outline="blue", fill=(255-greyness,)*3)
+                    self._draw.polygon(poly_tuples, outline="blue", fill=(255-greyness,)*3)
                 del poly_tuples
-            #xm = (xs1+xs2)/2
-            #ym = (ys1+ys2)/2
-            #draw.text((xm, ym), str(fidx+1), font=font, fill="black")
+            try:
+                self.regions.append( (int(sx/cnt), int(sy/cnt) ))
+            except ZeroDivisionError:
+                import pdb 
+                pdb.set_trace()
 
 
         if draw_legend:
@@ -83,28 +134,29 @@ class MapDrawer(object):
             mingrey1 = self.mingrey - lmargin 
             for iy in range(legend_box[1], legend_box[3]):
                 greyness = int(maxgrey1 - float(maxgrey1-mingrey1)/(height)*(iy - legend_box[1]))
-                draw.line((legend_box[0], iy) + (legend_box[2], iy), fill=(255-greyness,)*3)
+                self._draw.line((legend_box[0], iy) + (legend_box[2], iy), fill=(255-greyness,)*3)
                 
-            draw.rectangle(legend_box, outline="blue")
+            self._draw.rectangle(legend_box, outline="blue")
 
             nticks = 4
             ticklen = 10
             divisor = 6
             vmargin = float(lmargin)/(self.maxgrey-self.mingrey)*height
             if legend_header:
-                w,h = smallfont.getsize(legend_header)
-                draw.text(((legend_box[2]+legend_box[0]-w)/2, legend_box[1]-h-3),legend_header,
-                    font=smallfont, fill="blue")
+                w,h = self.smallfont.getsize(legend_header)
+                self._draw.text(((legend_box[2]+legend_box[0]-w)/2, legend_box[1]-h-3),legend_header,
+                    font=self.smallfont, fill="blue")
 
             for ii in range(0, nticks):
                 v = maxv - float(maxv-minv)*ii/(nticks-1)
                 s = "%.2f" % (v/10**divisor)
-                w,h = smallfont.getsize(s)
+                w,h = self.smallfont.getsize(s)
                 vpos = float(ii)*(height-2*vmargin)/(nticks-1)+vmargin+legend_box[1]
-                draw.text((legend_box[0]-ticklen-w-3, vpos-h/2), s, font=smallfont, fill="blue")
-                draw.line((legend_box[0]-ticklen, vpos) + (legend_box[0], vpos), fill="blue")
+                self._draw.text((legend_box[0]-ticklen-w-3, vpos-h/2), s, font=self.smallfont, fill="blue")
+                self._draw.line((legend_box[0]-ticklen, vpos) + (legend_box[0], vpos), fill="blue")
 
 
-        del draw
-        return im
+        return self.im
 
+    def __del__(self):
+        del self._draw

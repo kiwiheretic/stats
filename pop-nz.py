@@ -1,6 +1,6 @@
 import shapefile
 import pandas as pd
-from mapdrawer import MapDrawer
+from mapdrawer import MapDrawer, ShapeFileIterator
 
 
 
@@ -13,33 +13,18 @@ nztot = 1569900.0 #df.iloc[19,19].astype(float)
 #shp_folder = "C:/Users/Glenn/Documents/Stats/ShapeFiles/"
 #shpf = shapefile.Reader(shp_folder + "REGC2016_GV_Full.shp")
 shp_folder = "C:/Users/Glenn/Documents/Stats/2016 Digital Boundaries Generalised Clipped/"
-shpf = shapefile.Reader(shp_folder + "REGC2016_GV_Clipped.shp")
-fields = shpf.fields
-for name in fields:
-    print name
+shp_iter = ShapeFileIterator( shp_folder + "REGC2016_GV_Clipped.shp")
 
-records = shpf.records()
-geom = shpf.shapes()
 shades = []
-polygons = []
-bboxes = []
-for fidx, feature in enumerate(geom):
-    try:
-        if regidx[fidx] == 0: continue
-        v = df.iloc[19, regidx[fidx]]
-        shades.append(v)
-    except IndexError:
-        continue
-    parts = []
-    for idx in range(len(feature.parts)-1):
-        pidx1 = feature.parts[idx]
-        pidx2 = feature.parts[idx+1]
-        parts.append(feature.points[pidx1:pidx2-1])
-    parts.append(feature.points[feature.parts[-1]:])
-    polygons.append(parts)
-    bboxes.append(feature.bbox)
+for idx in range(0, len(regidx)):
+    if regidx[idx] == 0: 
+        v = 0
+    else:
+        v = df.iloc[19, regidx[idx]]
+    shades.append(v)
 
 map1 = MapDrawer()
-img = map1.draw(polygons, shades, bboxes=bboxes, title="Population Distribution of NZ (2015)", legend_header="(million)")
+img = map1.draw(shp_iter, shades, title="Population Distribution of NZ (2015)", legend_header="(million)")
+#map1.number_regions()
 #img = map1.draw(polygons, shades, bboxes=bboxes, legend_header="(million)")
-img.save("nz1.png", "PNG")
+img.save("nz-pop.png", "PNG")
