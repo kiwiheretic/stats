@@ -63,7 +63,7 @@ class MapDrawer(object):
         return (newx, newy)
 
 
-    def draw(self, polygons, shades=None, bboxes=None, title=None, draw_legend = True, legend_header=None):
+    def draw(self, polygons, shades=None, bboxes=None, title=None, draw_legend = True, legend_header=None, use_divisor = False):
         if title:
             w,h = self.font.getsize(title)
             x=(self.img_width-w)/2
@@ -72,6 +72,7 @@ class MapDrawer(object):
 
         minv = maxv = None
         for v in shades:
+            if not v: continue
             if minv == None or v < minv: minv = v
             if maxv == None or v > maxv: maxv = v
         
@@ -100,7 +101,10 @@ class MapDrawer(object):
             # create empty list to store all the coordinates
             if shades:
                 v = shades[idx]
-                greyness = self.maxgrey - (int((maxv-v)*(self.maxgrey-self.mingrey)/(maxv-minv)))
+                if v:
+                    greyness = self.maxgrey - (int((maxv-v)*(self.maxgrey-self.mingrey)/(maxv-minv)))
+                else:
+                    greyness = 0
             else:
                 greyness = minv = maxv = v = 0
 
@@ -140,7 +144,7 @@ class MapDrawer(object):
 
             nticks = 4
             ticklen = 10
-            divisor = 6
+            divisor = int(math.log(maxv)/math.log(10))
             vmargin = float(lmargin)/(self.maxgrey-self.mingrey)*height
             if legend_header:
                 w,h = self.smallfont.getsize(legend_header)
@@ -149,7 +153,10 @@ class MapDrawer(object):
 
             for ii in range(0, nticks):
                 v = maxv - float(maxv-minv)*ii/(nticks-1)
-                s = "%.2f" % (v/10**divisor)
+                if use_divisor:
+                    s = "%.2f" % (v/10**divisor)
+                else:
+                    s = "%d" % v
                 w,h = self.smallfont.getsize(s)
                 vpos = float(ii)*(height-2*vmargin)/(nticks-1)+vmargin+legend_box[1]
                 self._draw.text((legend_box[0]-ticklen-w-3, vpos-h/2), s, font=self.smallfont, fill="blue")
