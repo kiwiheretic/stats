@@ -17,5 +17,5 @@ print shades
 
 
 map1 = MapDrawer(dimensions=(475,480))
-img = map1.draw(shp_iter, shades, title="Median Income (June 2015)", legend_header="($)", exclude_regions=[17])
+img = map1.draw(shp_iter, shades, title="Median Income (June 2015)", legend_header="($)", exclude_regions=[17], colour_profile=((0,255,0),(255,0,0)))
 img.save("income-regional.png", "PNG")

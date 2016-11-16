@@ -67,7 +67,7 @@ class MapDrawer(object):
         return (newx, newy)
 
 
-    def draw(self, polygons, shades=None, bboxes=None, title=None, draw_legend = True, legend_header=None, use_divisor = False, exclude_regions=None):
+    def draw(self, polygons, shades=None, bboxes=None, title=None, draw_legend = True, legend_header=None, use_divisor = False, exclude_regions=None, colour_profile=None):
 
         if title:
             w,h = self.font.getsize(title)
@@ -115,7 +115,22 @@ class MapDrawer(object):
             else:
                 greyness = minv = maxv = v = 0
 
+            if v:
+                if colour_profile:
+                    begin, end = colour_profile
+                    fillcolour = []
+                    for ii in range(3):
+                        b = begin[ii]
+                        e = end[ii]
+                        c = int(0.9*(e-b)*(maxv - v)/(maxv-minv)+b)
+                        fillcolour.append(c)
+                    fillcolour = tuple(fillcolour)
+                else:
+                    fillcolour=(255-greyness,)*3
+            else:
+                fillcolour = (255,255,255)
             cnt = sx = sy = 0
+            print fillcolour
 
             for part in poly:
                 poly_tuples = []
@@ -127,7 +142,7 @@ class MapDrawer(object):
                     cnt += 1
 
                 if len(poly_tuples)>=2:
-                    self._draw.polygon(poly_tuples, outline="blue", fill=(255-greyness,)*3)
+                    self._draw.polygon(poly_tuples, outline="blue", fill=fillcolour)
                 del poly_tuples
             try:
                 self.regions.append( (int(sx/cnt), int(sy/cnt) ))
@@ -144,15 +159,27 @@ class MapDrawer(object):
             maxgrey1 = self.maxgrey + lmargin 
             mingrey1 = self.mingrey - lmargin 
             for iy in range(legend_box[1], legend_box[3]):
-                greyness = int(maxgrey1 - float(maxgrey1-mingrey1)/(height)*(iy - legend_box[1]))
-                self._draw.line((legend_box[0], iy) + (legend_box[2], iy), fill=(255-greyness,)*3)
+                if colour_profile:
+                    begin, end = colour_profile
+                    fillcolour = []
+                    for ii in range(3):
+                        b = begin[ii]
+                        e = end[ii]
+                        c = int((e-b)*float(iy-legend_box[1])/(height)+b)
+                        fillcolour.append(c)
+                    fillcolour = tuple(fillcolour)
+                else:
+                    greyness = int(maxgrey1 - float(maxgrey1-mingrey1)/(height)*(iy - legend_box[1]))
+                    fillcolour=(255-greyness,)*3
+                self._draw.line((legend_box[0], iy) + (legend_box[2], iy), fill=fillcolour)
                 
             self._draw.rectangle(legend_box, outline="blue")
 
             nticks = 4
             ticklen = 10
-            divisor = int(math.log(maxv)/math.log(10))
-            vmargin = float(lmargin)/(self.maxgrey-self.mingrey)*height
+            if use_divisor:
+                divisor = int(math.log(maxv)/math.log(10))
+            vmargin = 0.05*height
             if legend_header:
                 w,h = self.smallfont.getsize(legend_header)
                 self._draw.text(((legend_box[2]+legend_box[0]-w)/2, legend_box[1]-h-3),legend_header,

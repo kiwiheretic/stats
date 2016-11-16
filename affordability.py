@@ -25,8 +25,10 @@ for ii in range(0,len(rentals)):
     if income[ii] == None or rentals[ii] == None:
         shades.append(None)
     else:
-        shades.append(float(rentals[ii])/income[ii])
+        shades.append(income[ii] - (rentals[ii]))
+print income
+print rentals
 print shades
 map1 = MapDrawer(dimensions=(475, 480))
-img = map1.draw(shp_iter, shades, title="Rental Affordability Index", legend_header="(Index)", use_divisor=True, exclude_regions = [17] )
-img.save("rental-affordability.png", "PNG")
+img = map1.draw(shp_iter, shades, title="Median Income After Rent", legend_header="($)", use_divisor=False, exclude_regions = [17], colour_profile=((0,255,0),(255,0,0)))
+img.save("income-after-rent.png", "PNG")

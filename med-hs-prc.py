@@ -15,5 +15,5 @@ shp_iter = ShapeFileIterator( shp_folder + "REGC2016_GV_Clipped.shp")
 shades = permute_values(regidx, df.iloc[285, 1:])
 print shades
 map1 = MapDrawer(dimensions=(475,480))
-img = map1.draw(shp_iter, shades, title="Median Housing Rental (Oct 2016)", legend_header="($)", exclude_regions=[17])
+img = map1.draw(shp_iter, shades, title="Median Housing Rental (Oct 2016)", legend_header="($)", exclude_regions=[17], colour_profile=((255,0,0),(0,255,0)))
 img.save("house-rental-prices.png", "PNG")
