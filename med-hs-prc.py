@@ -23,5 +23,5 @@ for idx in range(0, len(regidx)):
     shades.append(v)
 
 map1 = MapDrawer()
-img = map1.draw(shp_iter, shades, title="Mean Housing Rental (Oct 2016)", legend_header="($)")
-img.save("house-prices.png", "PNG")
+img = map1.draw(shp_iter, shades, title="Median Housing Rental (Oct 2016)", legend_header="($)")
+img.save("house-rental-prices.png", "PNG")
