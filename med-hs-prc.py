@@ -1,4 +1,4 @@
-
+from datautils import permute_values
 import shapefile
 import pandas as pd
 from mapdrawer import MapDrawer, ShapeFileIterator
@@ -12,16 +12,8 @@ df = pd.read_csv(stats_folder + "Mean Rents by region.csv", skiprows=0)
 
 shp_folder = "C:/Users/Glenn/Documents/Stats/2016 Digital Boundaries Generalised Clipped/"
 shp_iter = ShapeFileIterator( shp_folder + "REGC2016_GV_Clipped.shp")
-
-shades = []
-for idx in range(0, len(regidx)):
-    try:
-        ii = regidx.index(idx+1)
-        v = df.iloc[285, ii+1]
-    except ValueError:
-        v = None 
-    shades.append(v)
-
+shades = permute_values(regidx, df.iloc[285, 1:])
+print shades
 map1 = MapDrawer()
 img = map1.draw(shp_iter, shades, title="Median Housing Rental (Oct 2016)", legend_header="($)")
 img.save("house-rental-prices.png", "PNG")
