@@ -16,6 +16,6 @@ shades = permute_values(regions, df['2015'])
 print shades
 
 
-map1 = MapDrawer()
-img = map1.draw(shp_iter, shades, title="Median Income (June 2015)", legend_header="($)")
+map1 = MapDrawer(dimensions=(475,480))
+img = map1.draw(shp_iter, shades, title="Median Income (June 2015)", legend_header="($)", exclude_regions=[17])
 img.save("income-regional.png", "PNG")

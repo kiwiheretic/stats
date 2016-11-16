@@ -31,11 +31,15 @@ class ShapeFileIterator(object):
         return parts
 
 class MapDrawer(object):
-    img_width, img_height = 640, 480
     mingrey=20
     maxgrey=170
 
-    def __init__(self):
+    def __init__(self, dimensions = None):
+        if dimensions:
+            self.img_width, self.img_height = dimensions
+        else:
+            self.img_width, self.img_height = (640, 480)
+
         self.im = Image.new('RGB', (self.img_width, self.img_height), color="white")
         self._draw = ImageDraw.Draw(self.im)
         self.smallfont = ImageFont.truetype("arial.ttf", 10)
@@ -63,7 +67,8 @@ class MapDrawer(object):
         return (newx, newy)
 
 
-    def draw(self, polygons, shades=None, bboxes=None, title=None, draw_legend = True, legend_header=None, use_divisor = False):
+    def draw(self, polygons, shades=None, bboxes=None, title=None, draw_legend = True, legend_header=None, use_divisor = False, exclude_regions=None):
+
         if title:
             w,h = self.font.getsize(title)
             x=(self.img_width-w)/2
@@ -77,8 +82,9 @@ class MapDrawer(object):
             if maxv == None or v > maxv: maxv = v
         
         minx = miny = maxx = maxy = None
-        for poly in polygons:
+        for ii, poly in enumerate(polygons):
             for part in poly:
+                if exclude_regions and ii+1 in exclude_regions: continue
                 for pt in part:
                     x,y = pt
                     if not minx or x < minx: minx = x
@@ -98,6 +104,7 @@ class MapDrawer(object):
         for idx, poly in enumerate(polygons):
 
             if not poly: continue
+            if exclude_regions and idx+1 in exclude_regions: continue
             # create empty list to store all the coordinates
             if shades:
                 v = shades[idx]
@@ -131,7 +138,7 @@ class MapDrawer(object):
 
         if draw_legend:
             print (minv, maxv)
-            legend_box = (440,300,470,390)
+            legend_box = (self.img_width-70,300,self.img_width-40,390)
             lmargin = 20
             height = legend_box[3]-legend_box[1] 
             maxgrey1 = self.maxgrey + lmargin 
