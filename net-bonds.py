@@ -11,11 +11,12 @@ dfopen.set_index('Month', inplace=True)
 dfclose = pd.read_csv(stats_folder + "Bonds Closed by region.csv", skiprows=0)
 dfclose.set_index('Month', inplace=True)
 df = dfopen.subtract(dfclose)
-
+df.rename(pd.to_datetime, inplace=True)
+df = df.groupby(df.index.year).mean()
 shp_folder = "C:/Users/Glenn/Documents/Stats/2016 Digital Boundaries Generalised Clipped/"
 shp_iter = ShapeFileIterator( shp_folder + "REGC2016_GV_Clipped.shp")
-shades = permute_values(regidx, df.loc['2016-10-01'])
+shades = permute_values(regidx, df.loc[2016])
 print shades
 map1 = MapDrawer(dimensions=(475,480))
-img = map1.draw(shp_iter, shades, title="Net Bonds Lodged (Oct 2016)", legend_header="(Qty)", exclude_regions=[17], colour_profile=((255,0,0),(0,255,0)))
-img.save("net-bonds-lodged.png", "PNG")
+img = map1.draw(shp_iter, shades, title="Net New Bonds Lodged (2016)", legend_header="(New Bonds)", exclude_regions=[17], colour_profile=((255,0,0),(0,255,0)))
+img.save("net-bonds-lodged-2016.png", "PNG")
